@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Petals — Five AI coders. One brain. One build.</title>
+<meta name="description" content="Petals orchestrates Claude Code, Codex, Grok, Kimi and Kiro as one team on one project with one shared brain — on your Mac.">
+<style>
+  :root {
+    --bg: #0b0b0e;
+    --surface: #17171b;
+    --surface2: #1e1e23;
+    --hairline: rgba(255,255,255,0.07);
+    --text: #f4f4f5;
+    --text2: #a1a1aa;
+    --text3: #616169;
+    --pink: #ff4f9a;
+    --pink-soft: #ffa6c4;
+    --green: #57e389;
+    --green-soft: #a3e2b7;
+    --amber: #ffcf6e;
+    --grad: linear-gradient(120deg, #ff4f9a, #ffcf6e 50%, #57e389);
+    --mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(255,79,154,0.35); }
+  a { color: inherit; }
+
+  /* ── header: just a mark and a burger. no bar, no line. ── */
+  header.top {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 26px 34px;
+    pointer-events: none;
+  }
+  .mark-chip {
+    display: flex; align-items: center; gap: 11px;
+    font-weight: 700; font-size: 17px; letter-spacing: -0.02em;
+    pointer-events: auto; text-decoration: none;
+  }
+  .burger {
+    pointer-events: auto; cursor: pointer;
+    width: 46px; height: 46px; border-radius: 50%;
+    background: rgba(23,23,27,0.6);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--hairline);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    transition: transform .25s, background .25s;
+  }
+  .burger:hover { transform: scale(1.06); background: rgba(32,32,38,0.75); }
+  .burger span {
+    display: block; width: 17px; height: 1.6px; border-radius: 2px;
+    background: var(--text); transition: transform .3s, opacity .3s, width .3s;
+  }
+  body.menu-open .burger span:nth-child(1) { transform: translateY(3.3px) rotate(45deg); }
+  body.menu-open .burger span:nth-child(2) { transform: translateY(-3.3px) rotate(-45deg); }
+
+  /* the menu: a room, not a dropdown */
+  .menu {
+    position: fixed; inset: 0; z-index: 150;
+    background: rgba(9,9,12,0.92);
+    backdrop-filter: blur(26px); -webkit-backdrop-filter: blur(26px);
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 0 max(34px, 10vw);
+    opacity: 0; visibility: hidden; transition: opacity .4s, visibility .4s;
+  }
+  body.menu-open .menu { opacity: 1; visibility: visible; }
+  .menu a.item {
+    display: block; text-decoration: none;
+    font-size: clamp(34px, 6.4vw, 62px); font-weight: 750; letter-spacing: -0.03em;
+    color: var(--text2); padding: 10px 0;
+    opacity: 0; transform: translateY(22px);
+    transition: opacity .5s, transform .5s, color .25s;
+  }
+  .menu a.item:hover { color: var(--text); }
+  .menu a.item em { font-style: normal; font-family: var(--mono); font-size: 13px; color: var(--text3); margin-left: 18px; letter-spacing: 0; font-weight: 500; vertical-align: super; }
+  body.menu-open .menu a.item { opacity: 1; transform: none; }
+  body.menu-open .menu a.item:nth-child(1) { transition-delay: .06s; }
+  body.menu-open .menu a.item:nth-child(2) { transition-delay: .12s; }
+  body.menu-open .menu a.item:nth-child(3) { transition-delay: .18s; }
+  body.menu-open .menu a.item:nth-child(4) { transition-delay: .24s; }
+  body.menu-open .menu a.item:nth-child(5) { transition-delay: .30s; }
+  .menu .menu-foot {
+    position: absolute; bottom: 34px; left: max(34px, 10vw); right: max(34px, 10vw);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; color: var(--text3);
+    opacity: 0; transition: opacity .5s .35s;
+  }
+  body.menu-open .menu .menu-foot { opacity: 1; }
+  .menu .menu-foot a { text-decoration: none; color: var(--text3); }
+  .menu .menu-foot a:hover { color: var(--text); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 13px 28px; border-radius: 999px;
+    font-size: 14.5px; font-weight: 600; text-decoration: none;
+    transition: transform .2s, box-shadow .2s; cursor: pointer; border: none;
+  }
+  .btn-primary { background: var(--grad); color: #0b0b0e; box-shadow: 0 4px 24px rgba(255,79,154,0.3); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(87,227,137,0.35); }
+  .btn-quiet { color: var(--text2); background: transparent; border: 1px solid var(--hairline); }
+  .btn-quiet:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+  /* ── hero: editorial, asymmetric ── */
+  .hero {
+    position: relative; min-height: 92vh;
+    display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: center;
+    padding: 130px max(34px, 6vw) 40px;
+    gap: 20px; overflow: visible;
+  }
+  @media (max-width: 880px) { .hero { grid-template-columns: 1fr; min-height: 0; padding-top: 140px; } }
+  .hero-copy { position: relative; z-index: 2; }
+  .kicker {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--text3); margin-bottom: 30px; font-weight: 600;
+    animation: fadeUp .8s both;
+  }
+  .kicker b { color: var(--green-soft); font-weight: 600; }
+  h1 {
+    font-size: clamp(46px, 7vw, 92px);
+    font-weight: 800; letter-spacing: -0.04em; line-height: 0.99;
+    animation: fadeUp .8s .08s both;
+  }
+  .grad-text {
+    background: var(--grad);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    background-size: 200% 100%;
+    animation: shimmer 7s ease-in-out infinite;
+  }
+  .hero-sub {
+    margin-top: 30px; max-width: 520px;
+    font-size: 17px; line-height: 1.7; color: var(--text2);
+    animation: fadeUp .8s .16s both;
+  }
+  .hero-sub b { color: var(--text); font-weight: 600; }
+  .hero-cta { display: flex; align-items: center; gap: 20px; margin-top: 40px; animation: fadeUp .8s .24s both; }
+  .hero-cta .aside { font-size: 13px; color: var(--text3); }
+  .hero-bloom-wrap { position: relative; height: 100%; min-height: 420px; }
+  #bloom { position: absolute; top: 50%; left: 58%; transform: translate(-50%, -50%); pointer-events: none; }
+  @media (max-width: 880px) { .hero-bloom-wrap { display: none; } }
+
+  /* the cast, quietly listed */
+  .cast {
+    grid-column: 1 / -1;
+    display: flex; flex-wrap: wrap; gap: 10px 34px; align-items: center;
+    margin-top: 40px; padding-top: 26px;
+    animation: fadeUp .8s .32s both;
+  }
+  .cast .lbl { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; color: var(--text3); text-transform: uppercase; }
+  .cast span { font-size: 14.5px; font-weight: 550; color: var(--text2); }
+  .cast .petal-badge { color: var(--green-soft); }
+
+  /* ── the app, wireframed ── */
+  .stage { padding: 40px max(34px, 6vw) 120px; }
+  .app-mock {
+    position: relative;
+    width: min(1120px, 100%); margin: 0 auto;
+    background: #131317;
+    border: 1px solid var(--hairline);
+    border-radius: 18px;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.65),
+                0 0 80px rgba(255,79,154,0.07), 0 0 110px rgba(87,227,137,0.05);
+    overflow: hidden; text-align: left;
+  }
+  .mock-titlebar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--hairline);
+    background: rgba(255,255,255,0.02);
+  }
+  .tl { width: 11px; height: 11px; border-radius: 50%; }
+  .mock-title { margin: 0 auto; font-size: 12.5px; color: var(--text3); font-weight: 500; display: flex; gap: 7px; align-items: center; transform: translateX(-30px); }
+  .mock-body { display: flex; }
+  .mock-rail {
+    width: 54px; flex: none;
+    border-right: 1px solid var(--hairline);
+    display: flex; flex-direction: column; align-items: center; gap: 13px;
+    padding: 16px 0;
+    background: rgba(255,255,255,0.015);
+  }
+  .rail-dot {
+    width: 29px; height: 29px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--hairline);
+    color: var(--text3);
+  }
+  .mock-grid {
+    flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    padding: 12px; background: #0e0e11;
+  }
+  .pane {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 12px; overflow: hidden;
+    min-height: 215px;
+    transition: border-color .5s, box-shadow .5s;
+  }
+  .pane.working {
+    border-color: transparent;
+    background:
+      linear-gradient(var(--surface), var(--surface)) padding-box,
+      linear-gradient(120deg, rgba(255,79,154,0.9), rgba(87,227,137,0.9)) border-box;
+    box-shadow: 0 0 22px rgba(255,79,154,0.16), 0 0 30px rgba(87,227,137,0.11);
+  }
+  .pane-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 12px; border-bottom: 1px solid var(--hairline);
+    font-family: var(--mono); font-size: 11.5px; color: var(--text2);
+  }
+  .agent-mark {
+    width: 16px; height: 16px; border-radius: 5px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 800; color: #0b0b0e;
+  }
+  .pane-status { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); transition: background .4s, box-shadow .4s; }
+  .pane.working .status-dot { background: var(--pink); box-shadow: 0 0 8px var(--pink); }
+  .pane.done .status-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .done-chip {
+    display: none; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; color: var(--green-soft);
+    background: rgba(87,227,137,0.12); border-radius: 999px; padding: 3px 9px;
+  }
+  .pane.done .done-chip { display: inline-flex; animation: popIn .4s both; }
+  .pane-body { font-family: var(--mono); font-size: 11.5px; line-height: 1.85; padding: 12px 14px; color: var(--text3); }
+  .pane-body .ln { opacity: 0; transform: translateY(4px); transition: opacity .4s, transform .4s; min-height: 21px; }
+  .pane-body .ln.show { opacity: 1; transform: none; }
+  .lt { color: var(--text); } .lp { color: var(--pink-soft); } .lg { color: var(--green-soft); } .la { color: var(--amber); } .ld { color: var(--text3); }
+  .mock-banner {
+    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%) translateY(90px);
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(rgba(22,22,26,0.97), rgba(22,22,26,0.97)) padding-box,
+                var(--grad) border-box;
+    border: 1px solid transparent;
+    border-radius: 14px; padding: 12px 20px;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    box-shadow: 0 16px 50px rgba(0,0,0,0.6);
+    transition: transform .6s cubic-bezier(.2,.9,.25,1.2);
+    white-space: nowrap; z-index: 5;
+  }
+  .app-mock.complete .mock-banner { transform: translateX(-50%) translateY(0); }
+  .mock-banner span b { color: var(--green-soft); }
+  .mock-caption { text-align: center; font-size: 13.5px; color: var(--text3); margin-top: 20px; }
+  .mock-caption b { color: var(--text2); font-weight: 600; }
+  @media (max-width: 720px) { .mock-grid { grid-template-columns: 1fr; } .mock-rail { display: none; } }
+
+  /* ── sections: numbered, editorial, no bands ── */
+  section { padding: 130px max(34px, 6vw); }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .sec-mark {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--text3); font-weight: 600; margin-bottom: 22px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .sec-mark::after { content: ""; width: 44px; height: 1px; background: linear-gradient(90deg, var(--pink), transparent); }
+  h2 { font-size: clamp(32px, 4.6vw, 52px); font-weight: 780; letter-spacing: -0.035em; line-height: 1.06; }
+  .sec-sub { margin-top: 18px; max-width: 590px; color: var(--text2); font-size: 16.5px; line-height: 1.7; }
+  .sec-sub b { color: var(--text); font-weight: 600; }
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s ease, transform .8s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* ── one brain: the hub diagram ── */
+  .brain-split { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; margin-top: 40px; }
+  @media (max-width: 900px) { .brain-split { grid-template-columns: 1fr; } }
+  .brain-visual { position: relative; aspect-ratio: 1; max-width: 480px; margin: 0 auto; width: 100%; }
+  .brain-core {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 3;
+  }
+  .brain-chip {
+    font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--text);
+    background: #1a1a1f; border: 1px solid rgba(255,255,255,0.14);
+    padding: 7px 14px; border-radius: 9px;
+    box-shadow: 0 0 30px rgba(255,79,154,0.18), 0 0 50px rgba(87,227,137,0.12);
+  }
+  .brain-node {
+    position: absolute; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    transform: translate(-50%, -50%);
+  }
+  .brain-node .nm {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-weight: 800; font-size: 15px; color: #0b0b0e;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .brain-node .nl { font-family: var(--mono); font-size: 10px; color: var(--text3); white-space: nowrap; }
+  .brain-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+  .brain-svg line { stroke: rgba(255,255,255,0.09); stroke-width: 1; }
+  .pulse { r: 2.6; opacity: 0; }
+
+  .brain-points { list-style: none; display: flex; flex-direction: column; gap: 22px; }
+  .brain-points li { display: flex; gap: 16px; }
+  .brain-points .no { font-family: var(--mono); font-size: 12px; color: var(--pink-soft); font-weight: 700; padding-top: 3px; }
+  .brain-points b { display: block; font-size: 16px; font-weight: 650; margin-bottom: 4px; }
+  .brain-points span { font-size: 14px; color: var(--text2); line-height: 1.65; }
+  .brain-points code { font-family: var(--mono); font-size: 12px; color: var(--green-soft); background: rgba(87,227,137,0.09); padding: 1px 6px; border-radius: 5px; }
+
+  /* ── the film ── */
+  .film-wrap { max-width: 940px; margin: 44px auto 0; position: relative; }
+  .film-wrap video {
+    width: 100%; display: block; border-radius: 18px;
+    border: 1px solid var(--hairline);
+    box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 80px rgba(255,79,154,0.06);
+  }
+
+  /* ── works-with ── */
+  .cli-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 50px; }
+  @media (max-width: 900px) { .cli-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .cli-grid { grid-template-columns: 1fr; } }
+  .cli-card {
+    background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: 18px; padding: 24px;
+    display: flex; flex-direction: column; gap: 12px;
+    transition: transform .3s, border-color .3s, box-shadow .3s;
+  }
+  .cli-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.16); box-shadow: 0 18px 50px rgba(0,0,0,0.45); }
+  .cli-top { display: flex; align-items: center; gap: 12px; }
+  .cli-logo {
+    width: 40px; height: 40px; border-radius: 11px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-weight: 800; font-size: 16px; color: #0b0b0e;
+  }
+  .cli-name { font-size: 16px; font-weight: 650; }
+  .cli-vendor { font-size: 12px; color: var(--text3); margin-top: 1px; }
+  .cli-desc { font-size: 13.5px; line-height: 1.6; color: var(--text2); }
+  .cli-tagline { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+  .cli-note { grid-column: 1 / -1; text-align: center; margin-top: 10px; font-size: 14px; color: var(--text2); }
+  .cli-note b { color: var(--green-soft); font-weight: 600; }
+
+  /* ── workspace niceties: compact editorial list ── */
+  .nice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 70px; margin-top: 46px; }
+  @media (max-width: 760px) { .nice-grid { grid-template-columns: 1fr; } }
+  .nice {
+    display: flex; gap: 18px; padding: 24px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .nice .ic { font-size: 17px; padding-top: 2px; }
+  .nice b { display: block; font-size: 15.5px; font-weight: 650; margin-bottom: 5px; }
+  .nice span { font-size: 14px; color: var(--text2); line-height: 1.6; }
+  .nice code { font-family: var(--mono); font-size: 12px; color: var(--green-soft); background: rgba(87,227,137,0.09); padding: 1px 6px; border-radius: 5px; }
+
+  /* ── petals build ── */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; margin-top: 30px; }
+  @media (max-width: 900px) { .split { grid-template-columns: 1fr; gap: 40px; } }
+  .feature-list { list-style: none; margin-top: 26px; display: flex; flex-direction: column; gap: 18px; }
+  .feature-list li { display: flex; gap: 14px; align-items: flex-start; }
+  .feature-list .fl-mark {
+    flex: none; width: 26px; height: 26px; border-radius: 8px; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(87,227,137,0.12); color: var(--green-soft); font-size: 13px; font-weight: 700;
+  }
+  .feature-list b { display: block; font-size: 15.5px; font-weight: 640; margin-bottom: 3px; }
+  .feature-list span { font-size: 14px; color: var(--text2); line-height: 1.6; }
+  .mini-term {
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: 16px;
+    overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+    font-family: var(--mono); font-size: 13px; line-height: 1.85;
+  }
+  .term-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--hairline); background: rgba(255,255,255,0.02); }
+  .term-title { margin-left: 10px; font-family: var(--mono); font-size: 12px; color: var(--text3); }
+  .term-body { padding: 20px 22px 24px; }
+  .t-dim { color: var(--text3); } .t-pink { color: var(--pink-soft); font-weight: 700; }
+  .t-green { color: var(--green-soft); } .t-amber { color: var(--amber); } .t-bold { color: var(--text); font-weight: 600; }
+  .caret { display: inline-block; width: 8px; height: 15px; background: var(--pink-soft); vertical-align: -2px; animation: blink 1.1s steps(1) infinite; border-radius: 1px; }
+  .pal { margin: 6px 0 2px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.025); }
+  .pal-row { display: flex; gap: 14px; padding: 5px 14px; font-size: 12.5px; color: var(--text3); }
+  .pal-row.sel { background: rgba(255,79,154,0.12); color: var(--text); }
+  .pal-row.sel .pal-name { color: var(--pink-soft); font-weight: 700; }
+  .pal-name { width: 82px; flex: none; }
+
+  /* ── pricing ── */
+  .price-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 380px)); gap: 22px; justify-content: center; margin-top: 56px; }
+  @media (max-width: 760px) { .price-cards { grid-template-columns: 1fr; } }
+  .price-card {
+    position: relative; background: var(--surface);
+    border: 1px solid var(--hairline); border-radius: 22px; padding: 38px 34px;
+    display: flex; flex-direction: column; text-align: left;
+    transition: transform .3s, box-shadow .3s;
+  }
+  .price-card:hover { transform: translateY(-5px); box-shadow: 0 24px 70px rgba(0,0,0,0.5); }
+  .price-card.hot {
+    border: 1px solid transparent;
+    background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--grad) border-box;
+    box-shadow: 0 0 60px rgba(255,79,154,0.12), 0 0 90px rgba(87,227,137,0.08);
+  }
+  .price-tag {
+    position: absolute; top: -13px; right: 26px;
+    background: var(--grad); color: #0b0b0e;
+    font-size: 11.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 6px 14px; border-radius: 999px;
+  }
+  .price-name { font-size: 15px; font-weight: 650; color: var(--text2); }
+  .price-amount { margin-top: 14px; display: flex; align-items: baseline; gap: 8px; }
+  .price-amount .num { font-size: 52px; font-weight: 800; letter-spacing: -0.04em; }
+  .price-amount .per { color: var(--text3); font-size: 15px; }
+  .price-desc { margin-top: 8px; color: var(--text2); font-size: 14px; }
+  .price-feats { list-style: none; margin: 28px 0 34px; display: flex; flex-direction: column; gap: 12px; }
+  .price-feats li { display: flex; gap: 10px; font-size: 14.5px; color: var(--text2); align-items: flex-start; }
+  .price-feats .tick { color: var(--green-soft); font-weight: 700; flex: none; }
+  .price-card .btn { justify-content: center; margin-top: auto; }
+  .price-note { text-align: center; margin-top: 26px; color: var(--text3); font-size: 13px; }
+
+  /* ── footer: a whisper ── */
+  footer {
+    padding: 70px 34px 46px;
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    color: var(--text3); font-size: 13px; text-align: center;
+  }
+  footer .frow { display: flex; gap: 26px; }
+  footer a { color: var(--text3); text-decoration: none; }
+  footer a:hover { color: var(--text); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+  @keyframes shimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+  @keyframes blink { 50% { opacity: 0; } }
+  @keyframes popIn { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .rosette-spin { animation: spin 40s linear infinite; transform-origin: center; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="mark-chip" href="#top">
+    <svg width="27" height="27" viewBox="0 0 100 100" aria-hidden="true">
+      <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ff4f9a"/><stop offset=".5" stop-color="#ffcf6e"/><stop offset="1" stop-color="#57e389"/>
+      </linearGradient></defs>
+      <path class="rosette-spin r-path" fill="url(#rg)" fill-rule="evenodd" d=""></path>
+    </svg>
+    Petals
+  </a>
+  <div class="burger" id="burger" role="button" aria-label="Menu" tabindex="0">
+    <span></span><span></span>
+  </div>
+</header>
+
+<div class="menu" id="menu">
+  <a class="item" href="#brain">One brain<em>01</em></a>
+  <a class="item" href="#film">The film<em>02</em></a>
+  <a class="item" href="#agents">The agents<em>03</em></a>
+  <a class="item" href="#build">Petals Build<em>04</em></a>
+  <a class="item" href="#pricing">Pricing<em>05</em></a>
+  <div class="menu-foot">
+    <span>Petals — a product by Fahrenheit Research</span>
+    <a href="https://f-r.co">f-r.co ↗</a>
+  </div>
+</div>
+
+<main id="top">
+
+<section class="hero">
+  <div class="hero-copy">
+    <div class="kicker">macOS · <b>one orchestration</b> · your logins</div>
+    <h1>Five AI coders.<br><span class="grad-text">One brain.<br>One build.</span></h1>
+    <p class="hero-sub">Claude Code, Codex, Grok, Kimi and Kiro — running as <b>one team on one project</b>, every agent reading and writing the same shared brain. You describe the build once. Petals distributes, watches, and integrates.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="#pricing">Get Petals</a>
+      <a class="btn btn-quiet" href="#film">Watch the film · 84s</a>
+    </div>
+  </div>
+  <div class="hero-bloom-wrap">
+    <canvas id="bloom" width="1000" height="1000"></canvas>
+  </div>
+  <div class="cast">
+    <span class="lbl">The team</span>
+    <span>Claude Code</span><span>Codex</span><span>Grok</span><span>Kimi</span><span>Kiro</span>
+    <span class="petal-badge">+ Petals Build, the local house agent</span>
+  </div>
+</section>
+
+<div class="stage">
+  <div class="app-mock" id="appMock">
+    <div class="mock-titlebar">
+      <span class="tl" style="background:#ff5f57"></span>
+      <span class="tl" style="background:#febc2e"></span>
+      <span class="tl" style="background:#28c840"></span>
+      <div class="mock-title">
+        <svg width="13" height="13" viewBox="0 0 100 100"><path fill="url(#rg)" fill-rule="evenodd" d="" class="r-path"></path></svg>
+        Petals — calculator-modern-minimal
+      </div>
+    </div>
+    <div class="mock-body">
+      <div class="mock-rail">
+        <div class="rail-dot" style="border-color: rgba(255,79,154,.5); color: var(--text)">✿</div>
+        <div class="rail-dot" style="color:#e8956a">✳</div>
+        <div class="rail-dot">⌬</div>
+        <div class="rail-dot">◎</div>
+        <div class="rail-dot">K</div>
+      </div>
+      <div class="mock-grid">
+        <div class="pane" data-agent="petal">
+          <div class="pane-head">
+            <span class="agent-mark" style="background:linear-gradient(120deg,#ff4f9a,#57e389)">✿</span> Petals Build <span class="ld" style="font-size:10px">· planner</span>
+            <span class="pane-status"><span class="done-chip">✓ done</span><span class="status-dot"></span></span>
+          </div>
+          <div class="pane-body">
+            <div class="ln"><span class="lp">❯</span> <span class="lt">build a modern minimal calculator app</span></div>
+            <div class="ln"><span class="lg">✎ edit PETALS.md</span> <span class="ld">· plan — one task per agent</span></div>
+            <div class="ln"><span class="ld">tasks: structure · logic · design · integration</span></div>
+            <div class="ln"><span class="lg">✚ write index.html</span> <span class="ld">· 96 lines</span> <span class="lg">✓</span></div>
+            <div class="ln"><span class="la">STATUS: DONE — structure ready for the team</span></div>
+          </div>
+        </div>
+        <div class="pane" data-agent="claude">
+          <div class="pane-head">
+            <span class="agent-mark" style="background:#e8956a">C</span> Claude Code
+            <span class="pane-status"><span class="done-chip">✓ done</span><span class="status-dot"></span></span>
+          </div>
+          <div class="pane-body">
+            <div class="ln"><span class="ld">“You are one member of a team building this project…”</span></div>
+            <div class="ln"><span class="lt">⏺ Opening PETALS.md — my task: calculator logic</span></div>
+            <div class="ln"><span class="lg">✓ app.js</span> <span class="ld">· operations, memory, keyboard</span></div>
+            <div class="ln"><span class="ld">note → Updates board: “exposed calc() for sci mode”</span></div>
+            <div class="ln"><span class="la">STATUS: DONE — logic wired to the team's markup</span></div>
+          </div>
+        </div>
+        <div class="pane" data-agent="grok">
+          <div class="pane-head">
+            <span class="agent-mark" style="background:#9aa0ae">G</span> Grok
+            <span class="pane-status"><span class="done-chip">✓ done</span><span class="status-dot"></span></span>
+          </div>
+          <div class="pane-body">
+            <div class="ln"><span class="ld">reading PETALS.md — my task: scientific mode</span></div>
+            <div class="ln"><span class="lt">⚡ Writing scientific.js…</span></div>
+            <div class="ln"><span class="lg">✓ scientific.js</span> <span class="ld">· trig, log, memory keys</span></div>
+            <div class="ln"><span class="ld">PETALS.md updated · ready for Claude to import</span></div>
+            <div class="ln"><span class="la">STATUS: DONE — worked for 51s</span></div>
+          </div>
+        </div>
+        <div class="pane" data-agent="integrate">
+          <div class="pane-head">
+            <span class="agent-mark" style="background:#e8956a">C</span> Claude Code <span class="ld" style="font-size:10px">· integration lead</span>
+            <span class="pane-status"><span class="done-chip">✓ done</span><span class="status-dot"></span></span>
+          </div>
+          <div class="pane-body">
+            <div class="ln"><span class="lt">⏺ My task's done; switching to integration.</span></div>
+            <div class="ln"><span class="ld">checking the Updates board — fixing only what's broken</span></div>
+            <div class="ln"><span class="lg">✎ index.html</span> <span class="ld">· wire scientific.js import</span></div>
+            <div class="ln"><span class="lg">✚ PETALS.md</span> <span class="ld">· Integration report + Team note</span></div>
+            <div class="ln"><span class="lg">STATUS: INTEGRATED</span> <span class="ld">· verified end to end</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mock-banner">
+      <svg width="20" height="20" viewBox="0 0 100 100"><path fill="url(#rg)" fill-rule="evenodd" d="" class="r-path"></path></svg>
+      <span>Project complete · <b>one brain, four hands</b> · preview ready</span>
+    </div>
+  </div>
+  <div class="mock-caption">A real session, wireframed: <b>one prompt</b> became a plan in the shared brain — each agent took its task, left notes for the others, and the lead integrated.</div>
+</div>
+
+<section id="brain">
+  <div class="wrap">
+    <div class="sec-mark reveal">01 · The USP</div>
+    <h2 class="reveal">One brain.<br>Every agent reads it.<br>Every agent writes it.</h2>
+    <p class="sec-sub reveal">Other tools give you tabs. Petals gives you a <b>team</b> — because every CLI works from the same file: <b>PETALS.md</b>, the shared brain that lives inside your project.</p>
+
+    <div class="brain-split">
+      <div class="brain-visual reveal" id="brainVis">
+        <svg class="brain-svg" viewBox="0 0 480 480" id="brainSvg"></svg>
+        <div class="brain-core">
+          <svg width="46" height="46" viewBox="0 0 100 100"><path class="rosette-spin r-path" fill="url(#rg)" fill-rule="evenodd" d=""></path></svg>
+          <div class="brain-chip">PETALS.md</div>
+        </div>
+      </div>
+      <ul class="brain-points">
+        <li class="reveal"><span class="no">01</span><div><b>The plan lives there</b><span>One prompt becomes a work distribution — <code>### Task — Claude Code</code>, one disjoint slice per agent, no collisions by design.</span></div></li>
+        <li class="reveal"><span class="no">02</span><div><b>Notes flow through it</b><span>Agents leave one-line heads-ups on the Updates board — “renamed a function”, “exposed calc() for sci mode” — and skim each other's notes to stay in sync.</span></div></li>
+        <li class="reveal"><span class="no">03</span><div><b>Done is declared there</b><span>Each agent ends its slice with <code>STATUS: DONE</code> — Petals watches the brain and the terminals, and ticks them off as they land.</span></div></li>
+        <li class="reveal"><span class="no">04</span><div><b>It ends with a team note</b><span>The lead integrates, verifies end to end, and writes an Integration report — plus a short note signed by the whole team.</span></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="film" style="padding-top: 40px;">
+  <div class="wrap" style="text-align:center">
+    <div class="sec-mark reveal" style="justify-content:center">02 · The film</div>
+    <h2 class="reveal">Eighty-four seconds,<br>start to bloom.</h2>
+    <div class="film-wrap reveal">
+      <video controls preload="metadata" poster="film-poster.jpg" src="petals-intro.mp4"></video>
+    </div>
+  </div>
+</section>
+
+<section id="agents" style="padding-top: 60px;">
+  <div class="wrap">
+    <div class="sec-mark reveal">03 · The agents</div>
+    <h2 class="reveal">Every major coding CLI.<br>Named, known, ready.</h2>
+    <p class="sec-sub reveal">Petals auto-detects what's installed and uses the logins you already have. No wrappers, no forks — the real tools, in real terminals.</p>
+
+    <div class="cli-grid">
+      <div class="cli-card reveal">
+        <div class="cli-top">
+          <div class="cli-logo" style="background:#e8956a">C</div>
+          <div><div class="cli-name">Claude Code</div><div class="cli-vendor">by Anthropic</div></div>
+        </div>
+        <p class="cli-desc">The deep reasoner. Architecture, tricky refactors, long-horizon tasks — resumes its conversation across Petals launches.</p>
+        <span class="cli-tagline">claude · auto-detected</span>
+      </div>
+      <div class="cli-card reveal">
+        <div class="cli-top">
+          <div class="cli-logo" style="background:#d7d7de">X</div>
+          <div><div class="cli-name">Codex</div><div class="cli-vendor">by OpenAI</div></div>
+        </div>
+        <p class="cli-desc">Fast, precise implementation. Great at grinding through well-scoped feature work while the others think big.</p>
+        <span class="cli-tagline">codex · auto-detected</span>
+      </div>
+      <div class="cli-card reveal">
+        <div class="cli-top">
+          <div class="cli-logo" style="background:#9aa0ae">G</div>
+          <div><div class="cli-name">Grok</div><div class="cli-vendor">by xAI</div></div>
+        </div>
+        <p class="cli-desc">Quick, opinionated, tireless. Point it at tests, tooling, or a stubborn bug and let it chew.</p>
+        <span class="cli-tagline">grok · auto-detected</span>
+      </div>
+      <div class="cli-card reveal">
+        <div class="cli-top">
+          <div class="cli-logo" style="background:#7ac0f5">K</div>
+          <div><div class="cli-name">Kimi</div><div class="cli-vendor">by Moonshot AI</div></div>
+        </div>
+        <p class="cli-desc">A bulk-implementation workhorse with a huge context window — hand it the wide, repetitive slices of the plan.</p>
+        <span class="cli-tagline">kimi · auto-detected</span>
+      </div>
+      <div class="cli-card reveal">
+        <div class="cli-top">
+          <div class="cli-logo" style="background:#b49df7">K</div>
+          <div><div class="cli-name">Kiro</div><div class="cli-vendor">by AWS</div></div>
+        </div>
+        <p class="cli-desc">Spec-driven and methodical. Strong on structured tasks, cloud wiring, and keeping work traceable.</p>
+        <span class="cli-tagline">kiro-cli · auto-detected</span>
+      </div>
+      <div class="cli-card reveal" style="border-color: rgba(255,79,154,0.35)">
+        <div class="cli-top">
+          <div class="cli-logo" style="background:linear-gradient(120deg,#ff4f9a,#ffcf6e,#57e389)">✿</div>
+          <div><div class="cli-name">Petals Build</div><div class="cli-vendor">built in · runs local</div></div>
+        </div>
+        <p class="cli-desc">The house agent. Runs on your local Ollama models (or Groq / Mistral keys), with a live command palette and drag-and-drop attachments.</p>
+        <span class="cli-tagline">included · no API key needed</span>
+      </div>
+      <div class="cli-note reveal">Sign in once per CLI — <b>Petals detects your existing logins</b> and shows exactly who's ready in Settings.</div>
+    </div>
+
+    <div class="nice-grid">
+      <div class="nice reveal"><span class="ic">👾</span><div><b>Creatures in the notch</b><span>One pixel companion per pane — pink while working, green when done, amber when they need you. Approvals open the island by themselves.</span></div></div>
+      <div class="nice reveal"><span class="ic">🌐</span><div><b>Preview without leaving</b><span>Finished builds render inside Petals; minimize the preview into an elegant edge drawer and pull it back with a click.</span></div></div>
+      <div class="nice reveal"><span class="ic">🔔</span><div><b>Approvals, your way</b><span>Approve a command for this terminal, this session, or the whole project — asked once, remembered properly.</span></div></div>
+      <div class="nice reveal"><span class="ic">✓</span><div><b>Done means done</b><span>Per-agent ticks, a chime per landing, and a project report with each agent's audit — plus the team's joint note.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="build" style="padding-top: 60px;">
+  <div class="wrap">
+    <div class="sec-mark reveal">04 · Petals Build</div>
+    <h2 class="reveal">A house agent that runs<br>entirely on your Mac.</h2>
+    <div class="split">
+      <div>
+        <ul class="feature-list">
+          <li class="reveal"><span class="fl-mark">/</span><div><b>A live command palette</b><span>Type <span style="font-family:var(--mono); color:var(--pink-soft)">/</span> and every command appears as you type — arrows choose, tab completes, enter runs.</span></div></li>
+          <li class="reveal"><span class="fl-mark">⊕</span><div><b>Drag &amp; drop anything</b><span>PDFs, Word docs, images, code — dropped on the pane, attached instantly, page counts and all.</span></div></li>
+          <li class="reveal"><span class="fl-mark">⚡︎</span><div><b>Local models, zero keys</b><span>Auto-picks your strongest Ollama coding model, or runs on Groq / Mistral keys — switch mid-session with <span style="font-family:var(--mono); color:var(--pink-soft)">/model</span>.</span></div></li>
+          <li class="reveal"><span class="fl-mark">✎</span><div><b>A real toolbox</b><span>Read, write, edit, search, fetch, run, undo, diff — every action collapses into a tidy receipt card.</span></div></li>
+        </ul>
+      </div>
+      <div class="mini-term reveal">
+        <div class="term-head">
+          <span class="tl" style="background:#ff5f57"></span>
+          <span class="tl" style="background:#febc2e"></span>
+          <span class="tl" style="background:#28c840"></span>
+          <span class="term-title">petals build</span>
+        </div>
+        <div class="term-body">
+          <div><span class="t-pink">❯</span> <span class="t-bold">/mo</span><span class="caret"></span></div>
+          <div class="pal">
+            <div class="pal-row sel"><span class="pal-name">❯ /model</span><span>switch model — picker if no name</span></div>
+            <div class="pal-row"><span class="pal-name">&nbsp;&nbsp;/models</span><span>installed models</span></div>
+          </div>
+          <div style="margin-top:14px"><span class="t-bold">Pick a model</span>&nbsp;&nbsp;<span class="t-dim">↑↓ choose · enter · esc</span></div>
+          <div><span class="t-dim">&nbsp;&nbsp;&nbsp;&nbsp;qwen2.5:7b&nbsp;&nbsp;</span><span class="t-pink">● current</span> <span class="t-amber">★ recommended</span></div>
+          <div><span class="t-pink">&nbsp;&nbsp;❯ qwen3-vl:4b</span></div>
+          <div style="margin-top:14px"><span class="t-green">⊕ attached</span> <span class="t-bold">brief.pdf</span> <span class="t-dim">· 4 pages — rides along with your message</span></div>
+          <div><span class="t-green">✚ write index.html</span> <span class="t-dim">· 214 lines</span> <span class="t-green">✓</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" style="padding-top: 60px;">
+  <div class="wrap" style="text-align:center">
+    <div class="sec-mark reveal" style="justify-content:center">05 · Pricing</div>
+    <h2 class="reveal">Simple, like it should be.</h2>
+    <p class="sec-sub reveal" style="margin-left:auto; margin-right:auto">Every feature in every plan. Your logins and local models — Petals never meters your tokens.</p>
+
+    <div class="price-cards">
+      <div class="price-card reveal">
+        <div class="price-name">Annual</div>
+        <div class="price-amount"><span class="num">$45.99</span><span class="per">/ year</span></div>
+        <div class="price-desc">All of Petals, always current.</div>
+        <ul class="price-feats">
+          <li><span class="tick">✓</span> All CLI panes + Petals Build</li>
+          <li><span class="tick">✓</span> One-brain orchestration</li>
+          <li><span class="tick">✓</span> Project reports &amp; team notes</li>
+          <li><span class="tick">✓</span> Notch creatures &amp; approvals</li>
+          <li><span class="tick">✓</span> Every update while subscribed</li>
+        </ul>
+        <a class="btn btn-quiet" href="#">Start with Annual</a>
+      </div>
+      <div class="price-card hot reveal">
+        <div class="price-tag">Best value</div>
+        <div class="price-name">Lifetime</div>
+        <div class="price-amount"><span class="num">$99.99</span><span class="per">once, forever</span></div>
+        <div class="price-desc">Pay once. Bloom forever.</div>
+        <ul class="price-feats">
+          <li><span class="tick">✓</span> Everything in Annual</li>
+          <li><span class="tick">✓</span> Lifetime license — no renewals</li>
+          <li><span class="tick">✓</span> All future updates included</li>
+          <li><span class="tick">✓</span> Less than three months of most AI subscriptions</li>
+        </ul>
+        <a class="btn btn-primary" href="#">Get Lifetime</a>
+      </div>
+    </div>
+    <div class="price-note">Runs on your machine with your own model accounts — no token markups, no lock-in.</div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <svg width="22" height="22" viewBox="0 0 100 100"><path class="rosette-spin r-path" fill="url(#rg)" fill-rule="evenodd" d=""></path></svg>
+  <div class="frow">
+    <a href="#brain">One brain</a>
+    <a href="#agents">Agents</a>
+    <a href="#pricing">Pricing</a>
+    <a href="https://f-r.co">f-r.co</a>
+  </div>
+  <span>© 2026 Fahrenheit Research. Grown on a Mac.</span>
+</footer>
+
+<script>
+// ── the rosette mark: six circles, even-odd — same geometry as the app ──
+function rosettePath(cx, cy, size) {
+  const orbit = size * 0.281, r = size * 0.218;
+  let d = "";
+  for (let i = 0; i < 6; i++) {
+    const a = (Math.PI / 3) * i - Math.PI / 2;
+    const x = cx + Math.cos(a) * orbit, y = cy + Math.sin(a) * orbit;
+    d += `M ${(x - r).toFixed(2)} ${y.toFixed(2)} a ${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0 a ${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0 Z `;
+  }
+  return d;
+}
+document.querySelectorAll("path[fill-rule=evenodd]").forEach(p => p.setAttribute("d", rosettePath(50, 50, 100)));
+
+// ── the burger + the menu ──
+const burger = document.getElementById("burger");
+burger.addEventListener("click", () => document.body.classList.toggle("menu-open"));
+document.querySelectorAll(".menu a").forEach(a =>
+  a.addEventListener("click", () => document.body.classList.remove("menu-open")));
+addEventListener("keydown", e => { if (e.key === "Escape") document.body.classList.remove("menu-open"); });
+
+// ── hero bloom: the rosette as breathing halftone ──
+const bloom = document.getElementById("bloom");
+const bctx = bloom.getContext("2d");
+const BS = 1000, CENTER = BS / 2, ORBIT = BS * 0.166, RAD = BS * 0.129;
+const petals = [];
+for (let i = 0; i < 6; i++) {
+  const a = (Math.PI / 3) * i - Math.PI / 2;
+  petals.push([CENTER + Math.cos(a) * ORBIT, CENTER + Math.sin(a) * ORBIT]);
+}
+const dots = [];
+for (let gy = 0; gy < BS; gy += 22) {
+  for (let gx = 0; gx < BS; gx += 22) {
+    let n = 0, minD = 1e9;
+    for (const [px, py] of petals) {
+      const d = Math.hypot(gx - px, gy - py);
+      if (d < RAD) { n++; minD = Math.min(minD, RAD - d); }
+    }
+    if (n % 2 === 1 && minD / RAD > 0.02) {
+      dots.push({ x: gx, y: gy, c: minD / RAD, ang: Math.atan2(gy - CENTER, gx - CENTER), seed: Math.random() * 6.28 });
+    }
+  }
+}
+const palette = [[255,79,154],[255,166,196],[255,207,110],[87,227,137],[163,226,183]];
+let bt = 0;
+function drawBloom() {
+  bt += 0.016;
+  bctx.clearRect(0, 0, BS, BS);
+  bctx.save();
+  bctx.translate(CENTER, CENTER); bctx.rotate(bt * 0.03); bctx.translate(-CENTER, -CENTER);
+  for (const d of dots) {
+    const u = ((d.ang + Math.PI) / (2 * Math.PI) + bt * 0.02) % 1;
+    const f = u * palette.length, i = Math.floor(f) % palette.length, j = (i + 1) % palette.length, m = f - Math.floor(f);
+    const col = [0,1,2].map(k => Math.round(palette[i][k] * (1 - m) + palette[j][k] * m));
+    const breathe = 0.75 + 0.25 * Math.sin(bt * 1.4 + d.seed);
+    bctx.beginPath();
+    bctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${0.16 + d.c * 0.22})`;
+    bctx.arc(d.x, d.y, (1.3 + d.c * 7) * breathe, 0, Math.PI * 2);
+    bctx.fill();
+  }
+  bctx.restore();
+  requestAnimationFrame(drawBloom);
+}
+drawBloom();
+function sizeBloom() {
+  const s = Math.min(innerWidth * 0.52, 640);
+  bloom.style.width = s + "px"; bloom.style.height = s + "px";
+}
+sizeBloom(); addEventListener("resize", sizeBloom);
+
+// ── the wireframe: one loop of a real orchestration ──
+const mock = document.getElementById("appMock");
+const panes = [...mock.querySelectorAll(".pane")];
+function runMock() {
+  mock.classList.remove("complete");
+  panes.forEach(p => {
+    p.classList.remove("done");
+    p.classList.add("working");
+    p.querySelectorAll(".ln").forEach(l => l.classList.remove("show"));
+  });
+  const petal = panes[0], workers = [panes[1], panes[2]], lead = panes[3];
+  const pl = petal.querySelectorAll(".ln");
+  [0,1,2,3,4].forEach(i => setTimeout(() => pl[i].classList.add("show"), 400 + i * 700));
+  setTimeout(() => { petal.classList.remove("working"); petal.classList.add("done"); }, 4200);
+  workers.forEach((w, wi) => {
+    const lines = w.querySelectorAll(".ln");
+    lines.forEach((l, li) => setTimeout(() => l.classList.add("show"), 1600 + wi * 450 + li * 800));
+    setTimeout(() => { w.classList.remove("working"); w.classList.add("done"); }, 2200 + wi * 450 + lines.length * 800);
+  });
+  const ll = lead.querySelectorAll(".ln");
+  ll.forEach((l, li) => setTimeout(() => l.classList.add("show"), 6400 + li * 750));
+  setTimeout(() => {
+    lead.classList.remove("working"); lead.classList.add("done");
+    mock.classList.add("complete");
+  }, 6400 + 5 * 750);
+  setTimeout(runMock, 15400);
+}
+runMock();
+
+// ── the brain: spokes + pulses travelling to and from PETALS.md ──
+const bsvg = document.getElementById("brainSvg");
+const NODES = [
+  { l: "Claude Code", c: "#e8956a", g: "C", a: -90 },
+  { l: "Codex",       c: "#d7d7de", g: "X", a: -18 },
+  { l: "Grok",        c: "#9aa0ae", g: "G", a: 54 },
+  { l: "Kimi",        c: "#7ac0f5", g: "K", a: 126 },
+  { l: "Kiro",        c: "#b49df7", g: "K", a: 198 },
+];
+const CC = 240, RR = 185;
+let svgLines = "", pulses = [];
+NODES.forEach((n, i) => {
+  const rad = n.a * Math.PI / 180;
+  const x = CC + Math.cos(rad) * RR, y = CC + Math.sin(rad) * RR;
+  svgLines += `<line x1="${CC}" y1="${CC}" x2="${x}" y2="${y}"></line>`;
+  svgLines += `<circle class="pulse" id="pulse${i}" fill="${i % 2 ? '#57e389' : '#ff4f9a'}"></circle>`;
+  const node = document.createElement("div");
+  node.className = "brain-node";
+  node.style.left = (x / 480 * 100) + "%";
+  node.style.top = (y / 480 * 100) + "%";
+  node.innerHTML = `<div class="nm" style="background:${n.c}">${n.g}</div><div class="nl">${n.l}</div>`;
+  document.getElementById("brainVis").appendChild(node);
+  pulses.push({ x, y, phase: i * 1.3, out: i % 2 === 0 });
+});
+bsvg.innerHTML = svgLines;
+function animPulses(ts) {
+  pulses.forEach((p, i) => {
+    const el = document.getElementById("pulse" + i);
+    let t = ((ts / 2400) + p.phase) % 2;
+    let u = t < 1 ? t : 2 - t;      // there and back again
+    const px = CC + (p.x - CC) * u, py = CC + (p.y - CC) * u;
+    el.setAttribute("cx", px); el.setAttribute("cy", py);
+    el.setAttribute("opacity", (0.25 + 0.75 * Math.sin(u * Math.PI)).toFixed(2));
+  });
+  requestAnimationFrame(animPulses);
+}
+requestAnimationFrame(animPulses);
+
+// ── reveals ──
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+}), { threshold: 0.12 });
+document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+</script>
+</body>
+</html>
